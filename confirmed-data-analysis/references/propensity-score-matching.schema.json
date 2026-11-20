@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://verdent.app/schemas/data-analysis/propensity-score-matching.schema.json",
+  "title": "Propensity Score Matching Input",
+  "allOf": [
+    {"$ref": "common.schema.json"},
+    {
+      "type": "object",
+      "required": ["analysis_type", "entity_key", "treatment_field", "treated_value", "control_value", "treatment_time_field", "outcome_metric", "outcome_window", "estimand", "covariates", "covariate_time_policy", "propensity_model", "matching", "balance_threshold", "overlap_policy"],
+      "properties": {
+        "analysis_type": {"const": "propensity_score_matching"},
+        "treatment_field": {"type": "string", "minLength": 1},
+        "treated_value": {},
+        "control_value": {},
+        "treatment_time_field": {"type": "string", "minLength": 1},
+        "outcome_metric": {"$ref": "common.schema.json#/$defs/metric"},
+        "outcome_window": {"$ref": "common.schema.json#/$defs/time_range"},
+        "estimand": {"enum": ["ATT", "ATE", "ATC"]},
+        "covariates": {"type": "array", "minItems": 1, "items": {"type": "string"}, "uniqueItems": true},
+        "covariate_time_policy": {"const": "pre_treatment_only"},
+        "propensity_model": {"enum": ["logistic_regression", "gradient_boosting", "random_forest", "custom"]},
+        "matching": {
+          "type": "object",
+          "required": ["method", "ratio", "replacement", "caliper_scale"],
+          "properties": {
+            "method": {"enum": ["nearest_neighbor", "optimal", "full_matching", "weighting"]},
+            "ratio": {"type": "integer", "minimum": 1},
+            "replacement": {"type": "boolean"},
+            "caliper": {"type": ["number", "null"], "minimum": 0},
+            "caliper_scale": {"enum": ["propensity", "logit_standard_deviation"]},
+            "exact_match_fields": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
+          },
+          "additionalProperties": false
+        },
+        "balance_threshold": {"type": "number", "minimum": 0, "maximum": 1},
+        "overlap_policy": {"enum": ["trim_non_overlap", "fail_if_material", "report_only"]},
+        "variance_method": {"enum": ["bootstrap", "robust", "paired", "abadi_imbens"]},
+        "sensitivity_analysis": {"enum": ["none", "rosenbaum_bounds", "negative_control", "both"]},
+        "random_seed": {"type": "integer"}
+      }
+    }
+  ],
+  "x-clarifications": [
+    {"when_missing": "covariates", "question": "处理发生前，哪些变量会同时影响接受处理和结果？"},
+    {"when": "a covariate occurs after treatment", "question": "该变量发生在处理之后，不能直接用于 PSM；是否移除或重新定义索引时间？"},
+    {"when_missing": "estimand", "question": "目标是估计已处理人群的 ATT、总体 ATE，还是未处理人群的 ATC？"}
+  ],
+  "x-required-output-fields": ["cohort_flow", "propensity_distribution", "overlap_diagnostics", "balance_before_after", "matched_sample", "effect_estimate", "confidence_interval", "p_value", "sensitivity_analysis", "identification_limitations"]
+}

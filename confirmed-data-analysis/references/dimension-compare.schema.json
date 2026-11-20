@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://verdent.app/schemas/data-analysis/dimension-compare.schema.json",
+  "title": "Dimension Comparison and Distribution Input",
+  "allOf": [
+    {"$ref": "common.schema.json"},
+    {
+      "type": "object",
+      "required": ["analysis_type", "metric", "dimension"],
+      "properties": {
+        "analysis_type": {"const": "dimension_compare"},
+        "dimension": {"type": "string", "minLength": 1},
+        "secondary_dimension": {"type": "string"},
+        "distribution_mode": {"enum": ["value", "share", "value_and_share"], "default": "value_and_share"},
+        "share_denominator": {"type": ["string", "null"], "default": "TOTAL"},
+        "ranking_order": {"enum": ["descending", "ascending"], "default": "descending"},
+        "tail_policy": {"enum": ["other_after_30", "full", "top_n"], "default": "other_after_30"},
+        "top_n": {"type": "integer", "minimum": 1}
+      }
+    }
+  ],
+  "x-clarifications": [
+    {"when_missing": "metric", "question": "使用哪个指标比较各分组？"},
+    {"when_missing": "dimension", "question": "希望按国家、渠道、版本还是其他维度拆分？"},
+    {"when": "distribution_mode contains share and share_denominator missing", "question": "占比以什么总体作为分母？"}
+  ],
+  "x-required-output-fields": ["total_row", "dimension_rows", "share", "rank", "benchmark_delta", "contribution", "other_row"]
+}

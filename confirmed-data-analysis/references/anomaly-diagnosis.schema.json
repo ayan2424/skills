@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://verdent.app/schemas/data-analysis/anomaly-diagnosis.schema.json",
+  "title": "Anomaly Diagnosis and Attribution Input",
+  "allOf": [
+    {"$ref": "common.schema.json"},
+    {
+      "type": "object",
+      "required": ["analysis_type", "target_metric", "anomaly_period", "baseline_period", "candidate_dimensions", "attribution_level"],
+      "properties": {
+        "analysis_type": {"const": "anomaly_diagnosis"},
+        "target_metric": {"$ref": "common.schema.json#/$defs/metric"},
+        "anomaly_period": {"$ref": "common.schema.json#/$defs/time_range"},
+        "baseline_period": {"$ref": "common.schema.json#/$defs/time_range"},
+        "expected_direction": {"enum": ["up", "down", "stable", "unknown"], "default": "unknown"},
+        "anomaly_threshold": {
+          "type": "object",
+          "properties": {
+            "method": {"enum": ["absolute", "relative", "zscore", "iqr", "business_rule"]},
+            "value": {"type": ["number", "string"]}
+          },
+          "required": ["method", "value"],
+          "additionalProperties": false
+        },
+        "candidate_dimensions": {"type": "array", "minItems": 1, "items": {"type": "string"}, "uniqueItems": true},
+        "supporting_metrics": {"type": "array", "items": {"$ref": "common.schema.json#/$defs/metric"}, "default": []},
+        "business_events": {"type": "array", "items": {"type": "object"}, "default": []},
+        "attribution_level": {"enum": ["descriptive", "correlational", "causal"], "default": "descriptive"},
+        "causal_method": {"enum": ["experiment", "difference_in_differences", "matching", "synthetic_control", "regression_discontinuity", "none"], "default": "none"},
+        "confidence_policy": {"enum": ["strict", "balanced", "exploratory"], "default": "balanced"}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"attribution_level": {"const": "causal"}}},
+          "then": {"properties": {"causal_method": {"not": {"const": "none"}}}}
+        }
+      ]
+    }
+  ],
+  "x-clarifications": [
+    {"when_missing": "baseline_period", "question": "异常应与哪个正常周期比较？"},
+    {"when_missing": "candidate_dimensions", "question": "优先从国家、渠道、版本还是其他维度排查？"},
+    {"when": "attribution_level=causal and causal_method=none", "question": "你希望做因果判断吗？如果是，需要指定实验或因果识别方法。"}
+  ],
+  "x-required-output-fields": ["confirm", "locate", "drill", "conclude", "driver_ranking", "evidence_for", "counter_evidence", "confidence", "limitations", "next_checks"]
+}

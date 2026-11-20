@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://verdent.app/schemas/data-analysis/synthetic-control.schema.json",
+  "title": "Synthetic Control Input",
+  "allOf": [
+    {"$ref": "common.schema.json"},
+    {
+      "type": "object",
+      "required": ["analysis_type", "unit_field", "time_field", "treated_unit", "donor_pool", "intervention_time", "pre_period", "post_period", "outcome_metric", "predictors", "fit_method", "inference_method", "pre_fit_policy"],
+      "properties": {
+        "analysis_type": {"const": "synthetic_control"},
+        "unit_field": {"type": "string", "minLength": 1},
+        "time_field": {"type": "string", "minLength": 1},
+        "treated_unit": {},
+        "donor_pool": {"type": "array", "minItems": 2, "items": {}, "uniqueItems": true},
+        "intervention_time": {"type": "string", "minLength": 1},
+        "pre_period": {"$ref": "common.schema.json#/$defs/time_range"},
+        "post_period": {"$ref": "common.schema.json#/$defs/time_range"},
+        "outcome_metric": {"$ref": "common.schema.json#/$defs/metric"},
+        "predictors": {"type": "array", "minItems": 1, "items": {"type": "string"}, "uniqueItems": true},
+        "fit_method": {"enum": ["simplex_weights", "augmented_synthetic_control", "synthetic_difference_in_differences", "custom"]},
+        "inference_method": {"enum": ["in_space_placebo", "in_time_placebo", "both"]},
+        "pre_fit_policy": {
+          "type": "object",
+          "required": ["metric", "threshold", "on_failure"],
+          "properties": {
+            "metric": {"enum": ["RMSPE", "MAE", "MAPE"]},
+            "threshold": {"type": "number", "minimum": 0},
+            "on_failure": {"enum": ["block_effect_claim", "report_with_warning"]}
+          },
+          "additionalProperties": false
+        },
+        "exclude_contaminated_donors": {"type": "boolean"},
+        "anticipation_window": {"type": ["string", "null"]},
+        "random_seed": {"type": "integer"}
+      }
+    }
+  ],
+  "x-clarifications": [
+    {"when_missing": "donor_pool", "question": "哪些未受干预且同期可比的单位可以进入供体池？"},
+    {"when_missing": "intervention_time", "question": "干预从哪个明确时间点开始？是否存在提前反应窗口？"},
+    {"when_missing": "pre_period", "question": "使用多长的干预前区间拟合合成对照？"}
+  ],
+  "x-required-output-fields": ["panel_quality", "donor_weights", "pre_fit_metrics", "observed_vs_synthetic", "period_effects", "average_post_effect", "placebo_distribution", "empirical_p_value", "robustness_checks", "identification_limitations"]
+}

@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://verdent.app/schemas/data-analysis/output-contract.schema.json",
+  "title": "Data Analysis Output Contract",
+  "type": "object",
+  "required": ["intent", "scope", "source_used", "evidence", "result_tables", "official_value_validation", "interpretation", "validation", "limitations", "next_actions", "handoff"],
+  "properties": {
+    "intent": {"type": "object"},
+    "scope": {"type": "object"},
+    "source_used": {"type": "array", "items": {"type": "object"}},
+    "metric_definitions": {"type": "object", "default": {}},
+    "evidence": {"type": "object"},
+    "result_tables": {"type": "array", "items": {"type": "object"}},
+    "charts": {"type": "array", "items": {"type": "object"}, "default": []},
+    "statistical_inference": {
+      "type": "object",
+      "properties": {
+        "method": {"type": "string"},
+        "estimand": {"type": "string"},
+        "effect_size": {"type": ["number", "object", "null"]},
+        "confidence_interval": {"type": ["array", "object", "null"]},
+        "p_value": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+        "adjusted_p_value": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+        "alpha": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+        "power_or_mde": {"type": ["object", "null"]},
+        "diagnostics": {"type": "array", "items": {"type": "object"}},
+        "conclusion_level": {"enum": ["validated", "directional", "identification_failed", "incomparable", "not_applicable"]},
+        "practical_significance": {"type": ["string", "object", "null"]}
+      },
+      "additionalProperties": true
+    },
+    "official_value_validation": {
+      "type": "object",
+      "required": ["status", "summary", "comparisons"],
+      "properties": {
+        "status": {"enum": ["not_requested", "passed", "warning", "critical", "partial", "incomparable"]},
+        "summary": {
+          "type": "object",
+          "required": ["requested", "compared", "passed", "warning", "critical", "incomparable"],
+          "properties": {
+            "requested": {"type": "integer", "minimum": 0},
+            "compared": {"type": "integer", "minimum": 0},
+            "passed": {"type": "integer", "minimum": 0},
+            "warning": {"type": "integer", "minimum": 0},
+            "critical": {"type": "integer", "minimum": 0},
+            "incomparable": {"type": "integer", "minimum": 0}
+          },
+          "additionalProperties": false
+        },
+        "comparisons": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["metric_name", "status", "official_value", "comparability_checks"],
+            "properties": {
+              "metric_name": {"type": "string"},
+              "computed_value": {"type": ["number", "null"]},
+              "official_value": {"type": "number"},
+              "signed_difference": {"type": ["number", "null"]},
+              "absolute_difference": {"type": ["number", "null"]},
+              "relative_difference": {"type": ["number", "null"]},
+              "status": {"enum": ["passed", "warning", "critical", "incomparable", "missing_computed_value"]},
+              "tolerance_used": {"type": "object"},
+              "comparability_checks": {
+                "type": "object",
+                "properties": {
+                  "metric_definition": {"enum": ["match", "mismatch", "unknown"]},
+                  "time_range": {"enum": ["match", "mismatch", "unknown"]},
+                  "filters": {"enum": ["match", "mismatch", "unknown"]},
+                  "timezone": {"enum": ["match", "mismatch", "unknown"]},
+                  "unit": {"enum": ["match", "mismatch", "unknown"]},
+                  "aggregation": {"enum": ["match", "mismatch", "unknown"]}
+                },
+                "additionalProperties": false
+              },
+              "probable_causes": {"type": "array", "items": {"type": "string"}, "default": []},
+              "notes": {"type": "string"}
+            },
+            "additionalProperties": false
+          }
+        },
+        "conclusion_blocked": {"type": "boolean", "default": false}
+      },
+      "additionalProperties": false
+    },
+    "interpretation": {"type": "array", "items": {"type": "object"}},
+    "validation": {
+      "type": "object",
+      "required": ["status"],
+      "properties": {
+        "status": {"enum": ["passed", "partial", "failed", "not_tested", "unverifiable"]},
+        "checks": {"type": "array", "items": {"type": "object"}, "default": []}
+      },
+      "additionalProperties": true
+    },
+    "limitations": {"type": "array", "items": {"type": "string"}},
+    "next_actions": {"type": "array", "items": {"type": "object"}},
+    "artifacts": {"type": "object", "default": {}},
+    "handoff": {
+      "type": "object",
+      "required": ["mode", "risk_level", "execution_completed"],
+      "properties": {
+        "mode": {"enum": ["direct", "assist", "escalate"]},
+        "risk_level": {"enum": ["low", "medium", "high"]},
+        "comparability": {"enum": ["high", "medium", "low", "not_applicable"]},
+        "official_validation_status": {"enum": ["not_requested", "passed", "warning", "critical", "partial", "incomparable"]},
+        "execution_completed": {"type": "boolean"}
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false
+}

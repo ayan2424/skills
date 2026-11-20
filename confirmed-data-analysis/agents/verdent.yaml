@@ -1,0 +1,16 @@
+category: AI & ML
+min_client_version: '2.11.0'
+interface:
+  display_name: 'Confirmed Data Analysis'
+  short_description: 'Confirm metric definitions before traceable statistical and causal analysis.'
+  icon_dark: './assets/icon-dark.png'
+  icon_light: './assets/icon-light.png'
+  default_prompt: 'Explain the inputs in plain language, confirm the metric definitions and analysis parameters with me, then run the analysis and validate the results.'
+  builtin: true
+  hidden: false
+  undeletable: true
+  label:
+    - data-analysis
+    - statistics
+    - experiment
+    - causal-inference

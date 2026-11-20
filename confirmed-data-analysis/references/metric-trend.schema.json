@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://verdent.app/schemas/data-analysis/metric-trend.schema.json",
+  "title": "Metric Query and Trend Input",
+  "allOf": [
+    {"$ref": "common.schema.json"},
+    {
+      "type": "object",
+      "required": ["analysis_type", "metric"],
+      "properties": {
+        "analysis_type": {"const": "metric_trend"},
+        "mode": {"enum": ["lookup", "trend"], "default": "trend"},
+        "comparison_period": {"enum": ["none", "previous_period", "year_over_year", "custom"], "default": "previous_period"},
+        "missing_date_policy": {"enum": ["zero", "null", "exclude"], "default": "null"},
+        "smoothing": {"enum": ["none", "moving_average_7", "moving_average_28"], "default": "none"}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"mode": {"const": "trend"}}},
+          "then": {"required": ["date_field", "time_range", "time_grain"]}
+        }
+      ]
+    }
+  ],
+  "x-clarifications": [
+    {"when_missing": "metric", "question": "你希望查看哪个指标，它如何计算？"},
+    {"when": "mode=trend and date_field missing", "question": "趋势应使用哪个日期字段？"},
+    {"when": "mode=trend and time_range missing", "question": "希望分析哪个时间范围？"}
+  ],
+  "x-required-output-fields": ["current_value", "comparison_value", "absolute_change", "relative_change", "trend_series", "extreme_points", "data_coverage"]
+}

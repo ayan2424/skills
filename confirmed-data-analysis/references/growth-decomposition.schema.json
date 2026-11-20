@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://verdent.app/schemas/data-analysis/growth-decomposition.schema.json",
+  "title": "Growth Decomposition Input",
+  "allOf": [
+    {"$ref": "common.schema.json"},
+    {
+      "type": "object",
+      "required": ["analysis_type", "target_metric", "current_period", "baseline_period", "decomposition_model", "drivers", "contribution_method", "residual_policy"],
+      "properties": {
+        "analysis_type": {"const": "growth_decomposition"},
+        "target_metric": {"$ref": "common.schema.json#/$defs/metric"},
+        "current_period": {"$ref": "common.schema.json#/$defs/time_range"},
+        "baseline_period": {"$ref": "common.schema.json#/$defs/time_range"},
+        "decomposition_model": {"type": "string", "minLength": 1},
+        "drivers": {"type": "array", "minItems": 2, "items": {"$ref": "common.schema.json#/$defs/metric"}},
+        "contribution_method": {"enum": ["sequential_substitution", "shapley", "log_mean_divisia", "custom"], "default": "shapley"},
+        "driver_order": {"type": "array", "items": {"type": "string"}},
+        "business_events": {"type": "array", "items": {"type": "object"}, "default": []},
+        "residual_policy": {"enum": ["show", "allocate_proportionally", "fail_if_material"], "default": "show"},
+        "residual_tolerance": {"type": "number", "minimum": 0, "default": 0.01}
+      }
+    }
+  ],
+  "x-clarifications": [
+    {"when_missing": "decomposition_model", "question": "目标指标可以拆成哪些驱动因素，业务公式是什么？"},
+    {"when_missing": "baseline_period", "question": "增长要与哪个基准周期比较？"},
+    {"when": "contribution_method=sequential_substitution and driver_order missing", "question": "顺序替换法按什么顺序替换驱动因素？"}
+  ],
+  "x-required-output-fields": ["target_change", "driver_current_values", "driver_baseline_values", "driver_contributions", "contribution_ranking", "waterfall", "residual", "reconciliation_check"]
+}

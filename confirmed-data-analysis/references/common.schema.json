@@ -1,0 +1,180 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://verdent.app/schemas/data-analysis/common.schema.json",
+  "title": "Data Analysis Common Input",
+  "type": "object",
+  "required": ["analysis_type", "question", "primary_source"],
+  "properties": {
+    "analysis_type": {"type": "string"},
+    "question": {"type": "string", "minLength": 1},
+    "primary_source": {"$ref": "#/$defs/source"},
+    "supporting_sources": {"type": "array", "items": {"$ref": "#/$defs/source"}, "default": []},
+    "metric": {"$ref": "#/$defs/metric"},
+    "entity_key": {"type": "string", "minLength": 1},
+    "date_field": {"type": "string", "minLength": 1},
+    "time_range": {"$ref": "#/$defs/time_range"},
+    "time_grain": {"enum": ["hour", "day", "week", "month", "quarter", "year"], "default": "day"},
+    "timezone": {"type": "string", "default": "source"},
+    "dimensions": {"type": "array", "items": {"type": "string"}, "uniqueItems": true, "default": []},
+    "filters": {"type": "array", "items": {"$ref": "#/$defs/filter"}, "default": []},
+    "comparison": {"$ref": "#/$defs/comparison"},
+    "business_context": {"type": ["string", "object", "null"], "default": null},
+    "benchmarks": {"type": ["object", "null"], "default": null},
+    "official_values": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/official_value"},
+      "default": []
+    },
+    "official_validation_policy": {
+      "$ref": "#/$defs/official_validation_policy"
+    },
+    "output_options": {
+      "type": "object",
+      "properties": {
+        "formats": {"type": "array", "items": {"enum": ["markdown", "json", "csv", "excel"]}, "default": ["markdown", "json"]},
+        "include_chart": {"type": "boolean", "default": true},
+        "include_full_table": {"type": "boolean", "default": true},
+        "max_visible_rows": {"type": "integer", "minimum": 1, "default": 30}
+      },
+      "additionalProperties": false,
+      "default": {}
+    }
+  },
+  "$defs": {
+    "source": {
+      "type": "object",
+      "required": ["type", "locator"],
+      "properties": {
+        "id": {"type": "string"},
+        "type": {"enum": ["csv", "excel", "superset_sql", "database", "parquet", "structured_text", "manifest"]},
+        "locator": {"type": "string", "minLength": 1},
+        "sheet": {"type": "string"},
+        "role": {"enum": ["primary", "validation", "support", "join_candidate"], "default": "primary"},
+        "grain": {"type": "string"},
+        "reliability": {"enum": ["high", "medium", "low"], "default": "high"}
+      },
+      "additionalProperties": false
+    },
+    "metric": {
+      "type": "object",
+      "required": ["name", "aggregation"],
+      "properties": {
+        "name": {"type": "string", "minLength": 1},
+        "column": {"type": "string"},
+        "formula": {"type": "string"},
+        "aggregation": {"enum": ["sum", "count", "count_distinct", "average", "median", "min", "max", "ratio_of_sums", "custom"]},
+        "unit": {"type": "string", "default": "number"},
+        "direction": {"enum": ["higher_is_better", "lower_is_better", "neutral"], "default": "neutral"},
+        "dedup_key": {"type": "string"},
+        "numerator": {"type": "string"},
+        "denominator": {"type": "string"},
+        "null_policy": {"enum": ["exclude", "zero", "preserve"], "default": "exclude"}
+      },
+      "oneOf": [
+        {"required": ["column"], "not": {"required": ["formula"]}},
+        {"required": ["formula"], "not": {"required": ["column"]}}
+      ],
+      "additionalProperties": false
+    },
+    "time_range": {
+      "type": "object",
+      "required": ["start", "end"],
+      "properties": {
+        "start": {"type": "string"},
+        "end": {"type": "string"},
+        "inclusive_end": {"type": "boolean", "default": true}
+      },
+      "additionalProperties": false
+    },
+    "filter": {
+      "type": "object",
+      "required": ["field", "operator", "value"],
+      "properties": {
+        "field": {"type": "string"},
+        "operator": {"enum": ["eq", "neq", "in", "not_in", "gt", "gte", "lt", "lte", "contains", "is_null", "not_null"]},
+        "value": {}
+      },
+      "additionalProperties": false
+    },
+    "comparison": {
+      "type": "object",
+      "properties": {
+        "type": {"enum": ["previous_period", "year_over_year", "custom_period", "segment", "benchmark"]},
+        "baseline": {"type": ["string", "object", "number", "null"]},
+        "current": {"type": ["string", "object", "null"]}
+      },
+      "additionalProperties": false
+    },
+    "official_value": {
+      "type": "object",
+      "required": ["metric_name", "value", "scope"],
+      "properties": {
+        "id": {"type": "string"},
+        "metric_name": {"type": "string", "minLength": 1},
+        "value": {"type": "number"},
+        "unit": {"type": "string", "default": "number"},
+        "aggregation": {"enum": ["sum", "count", "count_distinct", "average", "median", "min", "max", "ratio_of_sums", "custom"]},
+        "formula": {"type": "string"},
+        "dedup_key": {"type": "string"},
+        "numerator": {"type": "string"},
+        "denominator": {"type": "string"},
+        "scope": {"$ref": "#/$defs/official_value_scope"},
+        "source_label": {"type": "string", "default": "user_provided_official"},
+        "as_of": {"type": "string"},
+        "tolerance_override": {"$ref": "#/$defs/validation_tolerance"},
+        "notes": {"type": "string"}
+      },
+      "additionalProperties": false
+    },
+    "official_value_scope": {
+      "type": "object",
+      "required": ["mode"],
+      "properties": {
+        "mode": {"enum": ["inherit_analysis_scope", "explicit"], "default": "inherit_analysis_scope"},
+        "time_range": {"$ref": "#/$defs/time_range"},
+        "filters": {"type": "array", "items": {"$ref": "#/$defs/filter"}, "default": []},
+        "timezone": {"type": "string", "default": "source"},
+        "grain": {"type": "string", "default": "TOTAL"}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"mode": {"const": "explicit"}}},
+          "then": {"required": ["time_range"]}
+        }
+      ],
+      "additionalProperties": false
+    },
+    "validation_tolerance": {
+      "type": "object",
+      "properties": {
+        "relative_warning": {"type": "number", "minimum": 0, "default": 0.05},
+        "relative_critical": {"type": "number", "minimum": 0, "default": 0.10},
+        "absolute_warning": {"type": ["number", "null"], "minimum": 0, "default": null},
+        "absolute_critical": {"type": ["number", "null"], "minimum": 0, "default": null},
+        "threshold_logic": {"enum": ["any_exceeds", "all_exceed"], "default": "any_exceeds"}
+      },
+      "additionalProperties": false
+    },
+    "official_validation_policy": {
+      "type": "object",
+      "properties": {
+        "enabled": {"type": "boolean", "default": true},
+        "default_tolerance": {"$ref": "#/$defs/validation_tolerance"},
+        "require_definition_match": {"type": "boolean", "default": true},
+        "require_scope_match": {"type": "boolean", "default": true},
+        "zero_reference_policy": {"enum": ["absolute_only", "exact_match"], "default": "absolute_only"},
+        "on_warning": {"enum": ["continue", "assist"], "default": "continue"},
+        "on_critical": {"enum": ["continue_with_warning", "assist", "escalate"], "default": "assist"},
+        "on_incomparable": {"enum": ["skip_with_reason", "assist", "escalate"], "default": "assist"}
+      },
+      "additionalProperties": false,
+      "default": {}
+    }
+  },
+  "x-clarifications": [
+    {"when": "official_values item has scope.mode=explicit and time_range missing", "question": "这个官方值对应哪个时间范围？"},
+    {"when": "official value metric definition is incomplete or conflicts with computed metric", "question": "请确认官方指标的公式、聚合方式、去重键和单位。"},
+    {"when": "official value scope differs from analysis scope", "question": "官方值与本次分析的过滤范围是否应保持一致？"}
+  ],
+  "additionalProperties": true
+}

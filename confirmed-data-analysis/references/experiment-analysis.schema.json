@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://verdent.app/schemas/data-analysis/experiment-analysis.schema.json",
+  "title": "Randomized Experiment Analysis Input",
+  "allOf": [
+    {"$ref": "common.schema.json"},
+    {
+      "type": "object",
+      "required": ["analysis_type", "entity_key", "assignment_unit", "treatment_field", "control_value", "treatment_values", "assignment_time_field", "analysis_window", "population_rule", "exposure_rule", "metrics", "estimand", "alpha", "alternative", "srm_policy"],
+      "properties": {
+        "analysis_type": {"const": "experiment_analysis"},
+        "experiment_id": {"type": "string"},
+        "assignment_unit": {"type": "string", "minLength": 1},
+        "analysis_unit": {"type": "string", "minLength": 1},
+        "treatment_field": {"type": "string", "minLength": 1},
+        "control_value": {},
+        "treatment_values": {"type": "array", "minItems": 1, "items": {}},
+        "assignment_time_field": {"type": "string", "minLength": 1},
+        "analysis_window": {"$ref": "common.schema.json#/$defs/time_range"},
+        "population_rule": {"type": "string", "minLength": 1},
+        "exposure_rule": {"type": "string", "minLength": 1},
+        "metrics": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["role", "metric_type", "definition"],
+            "properties": {
+              "role": {"enum": ["primary", "secondary", "guardrail"]},
+              "metric_type": {"enum": ["binary", "continuous", "count", "ratio"]},
+              "definition": {"$ref": "common.schema.json#/$defs/metric"},
+              "winsorization": {"type": ["object", "null"]},
+              "variance_reduction": {"enum": ["none", "cuped", "regression_adjustment"]},
+              "pre_period_field": {"type": "string"}
+            },
+            "additionalProperties": false
+          }
+        },
+        "estimand": {"enum": ["intent_to_treat", "treatment_on_treated", "per_protocol"]},
+        "alpha": {"type": "number", "minimum": 0.0001, "maximum": 0.5},
+        "alternative": {"enum": ["two_sided", "greater", "less"]},
+        "multiple_testing": {"enum": ["none", "bonferroni", "holm", "benjamini_hochberg"]},
+        "cluster_field": {"type": ["string", "null"]},
+        "srm_policy": {
+          "type": "object",
+          "required": ["expected_allocation", "alpha", "on_failure"],
+          "properties": {
+            "expected_allocation": {"type": "object"},
+            "alpha": {"type": "number", "minimum": 0.0001, "maximum": 0.5},
+            "on_failure": {"enum": ["block_inference", "report_with_warning"]}
+          },
+          "additionalProperties": false
+        },
+        "missing_data_policy": {"enum": ["exclude", "zero_when_structural", "impute_predeclared", "report_both"]},
+        "novelty_or_carryover_check": {"type": "boolean"}
+      }
+    }
+  ],
+  "x-clarifications": [
+    {"when_missing": "metrics", "question": "实验主指标、护栏指标分别如何计算，分母和去重单位是什么？"},
+    {"when_missing": "assignment_unit", "question": "实验随机分流单位是用户、设备、团队还是其他实体？"},
+    {"when_missing": "exposure_rule", "question": "按被分流用户还是实际曝光用户纳入分析？"},
+    {"when_missing": "estimand", "question": "主结论使用 ITT、TOT 还是 per-protocol？"}
+  ],
+  "x-required-output-fields": ["sample_flow", "srm_check", "metric_results", "effect_size", "confidence_interval", "p_value", "adjusted_p_value", "power_or_mde", "practical_significance", "robustness_checks", "decision"]
+}

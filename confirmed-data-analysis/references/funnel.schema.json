@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://verdent.app/schemas/data-analysis/funnel.schema.json",
+  "title": "Funnel Analysis Input",
+  "allOf": [
+    {"$ref": "common.schema.json"},
+    {
+      "type": "object",
+      "required": ["analysis_type", "entity_key", "date_field", "time_range", "stages", "conversion_window", "sequence_policy"],
+      "properties": {
+        "analysis_type": {"const": "funnel"},
+        "stages": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "type": "object",
+            "required": ["name", "condition"],
+            "properties": {
+              "name": {"type": "string", "minLength": 1},
+              "event": {"type": "string"},
+              "condition": {"type": "string", "minLength": 1},
+              "timestamp_field": {"type": "string"}
+            },
+            "additionalProperties": false
+          }
+        },
+        "conversion_window": {"type": "string", "pattern": "^[1-9][0-9]*(m|h|d|w)$"},
+        "sequence_policy": {"enum": ["ordered", "strict_ordered", "unordered"], "default": "ordered"},
+        "cross_device_policy": {"enum": ["merge_by_entity", "separate", "unknown"], "default": "merge_by_entity"},
+        "attribution_rule": {"enum": ["first_touch", "last_touch", "entry_touch", "none"], "default": "entry_touch"}
+      }
+    }
+  ],
+  "x-clarifications": [
+    {"when_missing": "entity_key", "question": "使用 user_id、device_id 还是其他实体串联漏斗？"},
+    {"when_missing": "stages", "question": "漏斗阶段及其顺序是什么？"},
+    {"when_missing": "conversion_window", "question": "用户进入漏斗后多长时间内完成后续阶段才算转化？"}
+  ],
+  "x-required-output-fields": ["stage_counts", "step_conversion_rates", "dropoff_counts", "dropoff_rates", "overall_conversion", "bottleneck", "segment_funnels", "sequence_quality"]
+}

@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://verdent.app/schemas/data-analysis/confirmed-analysis-contract.schema.json",
+  "title": "Confirmed Analysis Execution Contract",
+  "description": "A user-confirmed, versioned and locked contract. Only this object may authorize data execution.",
+  "type": "object",
+  "required": [
+    "contract_id",
+    "contract_version",
+    "draft_id",
+    "selected_capability",
+    "target_schema_id",
+    "confirmed_request",
+    "field_provenance_snapshot",
+    "confirmation",
+    "locked",
+    "execution_allowed"
+  ],
+  "properties": {
+    "contract_id": {"type": "string", "minLength": 1},
+    "contract_version": {"type": "integer", "minimum": 1},
+    "supersedes_contract_id": {"type": ["string", "null"], "default": null},
+    "draft_id": {"type": "string", "minLength": 1},
+    "selected_capability": {
+      "enum": [
+        "metric_trend",
+        "dimension_compare",
+        "funnel",
+        "retention",
+        "growth_decomposition",
+        "anomaly_diagnosis",
+        "experiment_analysis",
+        "experiment_sample_size",
+        "propensity_score_matching",
+        "synthetic_control"
+      ]
+    },
+    "target_schema_id": {"type": "string", "minLength": 1},
+    "confirmed_request": {
+      "oneOf": [
+        {"$ref": "metric-trend.schema.json"},
+        {"$ref": "dimension-compare.schema.json"},
+        {"$ref": "funnel.schema.json"},
+        {"$ref": "retention.schema.json"},
+        {"$ref": "growth-decomposition.schema.json"},
+        {"$ref": "anomaly-diagnosis.schema.json"},
+        {"$ref": "experiment-analysis.schema.json"},
+        {"$ref": "experiment-sample-size.schema.json"},
+        {"$ref": "propensity-score-matching.schema.json"},
+        {"$ref": "synthetic-control.schema.json"}
+      ]
+    },
+    "field_provenance_snapshot": {
+      "type": "array",
+      "items": {"$ref": "request-draft.schema.json#/$defs/field_provenance"}
+    },
+    "confirmation": {
+      "type": "object",
+      "required": ["confirmed_by", "confirmed_at", "confirmation_text", "changes_from_draft"],
+      "properties": {
+        "confirmed_by": {"const": "user"},
+        "confirmed_at": {"type": "string", "format": "date-time"},
+        "confirmation_text": {"type": "string", "minLength": 1},
+        "changes_from_draft": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["field_path", "before", "after"],
+            "properties": {
+              "field_path": {"type": "string"},
+              "before": {},
+              "after": {}
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "locked": {"const": true},
+    "execution_allowed": {"const": true}
+  },
+  "additionalProperties": false
+}

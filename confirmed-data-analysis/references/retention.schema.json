@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://verdent.app/schemas/data-analysis/retention.schema.json",
+  "title": "Retention and Cohort Analysis Input",
+  "allOf": [
+    {"$ref": "common.schema.json"},
+    {
+      "type": "object",
+      "required": ["analysis_type", "entity_key", "cohort_event", "cohort_date_field", "return_event", "retention_windows", "cohort_grain", "observation_end", "retention_type"],
+      "properties": {
+        "analysis_type": {"const": "retention"},
+        "cohort_event": {"type": "string", "minLength": 1},
+        "cohort_date_field": {"type": "string", "minLength": 1},
+        "return_event": {"type": "string", "minLength": 1},
+        "retention_windows": {"type": "array", "minItems": 1, "items": {"type": "integer", "minimum": 0}, "uniqueItems": true},
+        "cohort_grain": {"enum": ["day", "week", "month"], "default": "week"},
+        "observation_end": {"type": "string", "minLength": 1},
+        "retention_type": {"enum": ["exact_period", "rolling", "bounded_period"], "default": "exact_period"},
+        "reactivation_policy": {"enum": ["count_as_return", "separate", "exclude"], "default": "count_as_return"},
+        "maturity_policy": {"enum": ["mark_immature", "exclude_immature"], "default": "mark_immature"}
+      }
+    }
+  ],
+  "x-clarifications": [
+    {"when_missing": "cohort_event", "question": "用户以注册、激活还是首次付费作为入组事件？"},
+    {"when_missing": "return_event", "question": "什么行为算作用户回来？"},
+    {"when_missing": "retention_windows", "question": "希望计算 D1、D7、D30 还是其他留存窗口？"}
+  ],
+  "x-required-output-fields": ["cohort_sizes", "retention_matrix", "retention_curve", "window_summary", "maturity_flags", "segment_comparison", "reactivation_summary"]
+}

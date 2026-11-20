@@ -1,0 +1,214 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://verdent.app/schemas/data-analysis/request-draft.schema.json",
+  "title": "Natural Language Analysis Request Draft",
+  "description": "A reviewable, possibly incomplete draft extracted from a user's natural-language request. This object never authorizes data execution.",
+  "type": "object",
+  "required": [
+    "draft_id",
+    "schema_version",
+    "raw_request",
+    "selected_capability",
+    "intent_confidence",
+    "normalized_request",
+    "field_provenance",
+    "schema_validation",
+    "confirmation"
+  ],
+  "properties": {
+    "draft_id": {"type": "string", "minLength": 1},
+    "schema_version": {"enum": ["0.3", "0.4"]},
+    "raw_request": {"type": "string", "minLength": 1},
+    "selected_capability": {
+      "enum": [
+        "metric_trend",
+        "dimension_compare",
+        "funnel",
+        "retention",
+        "growth_decomposition",
+        "anomaly_diagnosis",
+        "experiment_analysis",
+        "experiment_sample_size",
+        "propensity_score_matching",
+        "synthetic_control",
+        "undetermined"
+      ]
+    },
+    "target_schema_id": {"type": ["string", "null"]},
+    "intent_confidence": {"type": "number", "minimum": 0, "maximum": 1},
+    "interaction_mode": {"enum": ["adaptive", "compact", "guided"], "default": "adaptive"},
+    "intent_candidates": {
+      "type": "array",
+      "maxItems": 3,
+      "items": {
+        "type": "object",
+        "required": ["capability", "confidence", "reason"],
+        "properties": {
+          "capability": {
+            "enum": [
+              "metric_trend",
+              "dimension_compare",
+              "funnel",
+              "retention",
+              "growth_decomposition",
+              "anomaly_diagnosis",
+              "experiment_analysis",
+              "experiment_sample_size",
+              "propensity_score_matching",
+              "synthetic_control"
+            ]
+          },
+          "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+          "reason": {"type": "string", "minLength": 1}
+        },
+        "additionalProperties": false
+      },
+      "default": []
+    },
+    "normalized_request": {
+      "description": "Partial object shaped toward target_schema_id. It may omit required fields until confirmation.",
+      "type": "object"
+    },
+    "field_provenance": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/field_provenance"}
+    },
+    "schema_validation": {
+      "type": "object",
+      "required": ["status", "missing_required_fields", "errors"],
+      "properties": {
+        "status": {"enum": ["incomplete", "valid", "conflict"]},
+        "missing_required_fields": {
+          "type": "array",
+          "items": {"type": "string"},
+          "uniqueItems": true
+        },
+        "errors": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["field_path", "message"],
+            "properties": {
+              "field_path": {"type": "string"},
+              "message": {"type": "string"}
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "confirmation": {
+      "type": "object",
+      "required": [
+        "policy",
+        "draft_status",
+        "execution_allowed",
+        "blocking_fields",
+        "questions",
+        "confirmation_summary"
+      ],
+      "properties": {
+        "policy": {"const": "always_before_execute"},
+        "draft_status": {
+          "enum": ["needs_clarification", "ready_for_confirmation", "confirmed", "rejected"]
+        },
+        "execution_allowed": {"const": false},
+        "blocking_fields": {
+          "type": "array",
+          "items": {"type": "string"},
+          "uniqueItems": true
+        },
+        "questions": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1}
+        },
+        "confirmation_summary": {"type": "string"}
+      },
+      "additionalProperties": false
+    }
+  },
+  "$defs": {
+    "field_provenance": {
+      "type": "object",
+      "required": ["field_path", "label", "status", "source", "confidence", "blocking", "confirmation_needed"],
+      "properties": {
+        "field_path": {"type": "string", "minLength": 1},
+        "label": {"type": "string", "minLength": 1},
+        "value": {},
+        "original_text": {"type": "string"},
+        "status": {"enum": ["confirmed", "inferred", "defaulted", "missing", "conflict"]},
+        "source": {
+          "enum": [
+            "user_explicit",
+            "dataset_inferred",
+            "session_inherited",
+            "memory_hint",
+            "product_default",
+            "missing"
+          ]
+        },
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        "blocking": {"type": "boolean"},
+        "confirmation_needed": {"type": "boolean"},
+        "evidence": {
+          "type": "array",
+          "items": {"type": "string"},
+          "default": []
+        },
+        "alternatives": {
+          "type": "array",
+          "maxItems": 3,
+          "items": {},
+          "default": []
+        },
+        "clarification_question": {"type": "string"},
+        "user_guidance": {
+          "type": "object",
+          "required": ["plain_language", "why_needed", "unknown_handling"],
+          "properties": {
+            "plain_language": {"type": "string", "minLength": 1},
+            "why_needed": {"type": "string", "minLength": 1},
+            "example": {"type": "string"},
+            "answer_options": {
+              "type": "array",
+              "maxItems": 3,
+              "items": {
+                "type": "object",
+                "required": ["value", "label", "meaning"],
+                "properties": {
+                  "value": {},
+                  "label": {"type": "string", "minLength": 1},
+                  "meaning": {"type": "string", "minLength": 1},
+                  "recommended": {"type": "boolean"}
+                },
+                "additionalProperties": false
+              },
+              "default": []
+            },
+            "unknown_handling": {"enum": ["discover_from_data", "discover_from_config", "suggest_low_risk_default", "must_ask_owner", "cannot_proceed"]}
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {"selected_capability": {"const": "undetermined"}},
+        "required": ["selected_capability"]
+      },
+      "then": {
+        "properties": {
+          "target_schema_id": {"type": "null"},
+          "confirmation": {
+            "properties": {"draft_status": {"const": "needs_clarification"}}
+          }
+        }
+      }
+    }
+  ],
+  "additionalProperties": false
+}

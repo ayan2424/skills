@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://verdent.app/schemas/data-analysis/experiment-sample-size.schema.json",
+  "title": "Experiment Sample Size and Power Input",
+  "type": "object",
+  "required": ["analysis_type", "question", "metric_name", "metric_type", "minimum_detectable_effect", "effect_scale", "alpha", "power", "alternative", "allocation_ratio", "design_effect", "expected_attrition"],
+  "properties": {
+    "analysis_type": {"const": "experiment_sample_size"},
+    "question": {"type": "string", "minLength": 1},
+    "metric_name": {"type": "string", "minLength": 1},
+    "metric_type": {"enum": ["binary", "continuous"]},
+    "baseline_rate": {"type": "number", "minimum": 0, "maximum": 1},
+    "baseline_mean": {"type": "number"},
+    "standard_deviation": {"type": "number", "minimum": 0},
+    "minimum_detectable_effect": {"type": "number", "minimum": 0},
+    "effect_scale": {"enum": ["absolute", "relative", "standardized"]},
+    "alpha": {"type": "number", "minimum": 0.0001, "maximum": 0.5},
+    "power": {"type": "number", "minimum": 0.5, "maximum": 0.9999},
+    "alternative": {"enum": ["two_sided", "one_sided"]},
+    "allocation_ratio": {"type": "number", "minimum": 0.01},
+    "design_effect": {"type": "number", "minimum": 1},
+    "expected_attrition": {"type": "number", "minimum": 0, "maximum": 0.99},
+    "variants": {"type": "integer", "minimum": 2},
+    "multiple_testing": {"enum": ["none", "bonferroni", "holm"]},
+    "traffic_per_day": {"type": "number", "minimum": 0},
+    "primary_source": {"$ref": "common.schema.json#/$defs/source"},
+    "official_values": {"type": "array", "items": {"$ref": "common.schema.json#/$defs/official_value"}, "default": []}
+  },
+  "allOf": [
+    {"if": {"properties": {"metric_type": {"const": "binary"}}}, "then": {"required": ["baseline_rate"]}},
+    {"if": {"properties": {"metric_type": {"const": "continuous"}}}, "then": {"required": ["standard_deviation"]}},
+    {"if": {"properties": {"metric_type": {"const": "continuous"}, "effect_scale": {"const": "relative"}}}, "then": {"required": ["baseline_mean"]}}
+  ],
+  "additionalProperties": false,
+  "x-clarifications": [
+    {"when": "metric_type=binary and baseline_rate missing", "question": "当前基准转化率是多少？"},
+    {"when": "metric_type=continuous and standard_deviation missing", "question": "历史数据的标准差是多少？"},
+    {"when_missing": "minimum_detectable_effect", "question": "最小希望检出的业务变化是多少，是绝对值还是相对值？"}
+  ],
+  "x-required-output-fields": ["assumptions", "control_sample_size", "treatment_sample_size", "total_sample_size", "inflated_sample_size", "estimated_duration", "sensitivity_table", "formula_or_method"]
+}
